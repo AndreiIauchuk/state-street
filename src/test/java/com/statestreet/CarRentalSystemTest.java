@@ -4,11 +4,11 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static com.statestreet.CarRentalSystem.*;
-import static org.junit.jupiter.api.Assertions.*;
-
 import static com.statestreet.CarType.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CarRentalSystemTest {
 
@@ -21,7 +21,35 @@ public class CarRentalSystemTest {
 
     @Test
     void shouldRentCar() {
-       carRentalSystem.rent(SEDAN, LocalDateTime.now().plusHours(1), 3);
+        carRentalSystem.rent(SEDAN, LocalDateTime.now().plusHours(1), 3);
+    }
+
+    @Test
+    void shouldThrowIfAllCarsAreRentedInSameGivenTimeSync() {
+        carRentalSystem.rent(SEDAN, LocalDateTime.now().plusHours(1), 3);
+        Exception exc = assertThrows(
+                RuntimeException.class,
+                () -> carRentalSystem.rent(SEDAN, LocalDateTime.now().plusHours(1), 3));
+        assertEquals(NO_AVAILABLE_CARS_LEFT + SEDAN, exc.getMessage());
+    }
+
+    @Test
+    void shouldRentIfAllCarsAreRentedButTimeButGivenTimeIsAvailable() {
+        carRentalSystem.rent(SEDAN, LocalDateTime.now().plusHours(1), 1);
+        assertDoesNotThrow(() -> carRentalSystem.rent(SEDAN, LocalDateTime.now().plusDays(2), 3));
+    }
+
+    @Test
+    void shouldThrowIfAllCarsAreRentedInSameGivenTimeAsync() {
+        CompletableFuture.allOf(
+                CompletableFuture.runAsync(() -> carRentalSystem.rent(SEDAN, LocalDateTime.now().plusHours(1), 1)),
+                CompletableFuture.runAsync(() -> carRentalSystem.rent(SEDAN, LocalDateTime.now().plusHours(1), 1))
+        ).handle((rent, exc) ->
+                {
+                    assertEquals(NO_AVAILABLE_CARS_LEFT + SEDAN, exc.getMessage());
+                    return rent;
+                }
+        );
     }
 
     @Test

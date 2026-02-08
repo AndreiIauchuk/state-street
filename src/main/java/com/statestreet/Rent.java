@@ -1,6 +1,16 @@
 package com.statestreet;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
-public record Rent(CarType carType, LocalDateTime startAt, LocalDateTime endAt) {
+@AllArgsConstructor
+@Getter
+@Setter
+public class Rent {
+    private CarType carType;
+    private LocalDateTime startAt;
+    private LocalDateTime endAt;
 }

@@ -3,6 +3,7 @@ package com.statestreet;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -12,6 +13,7 @@ public class CarRentalSystem {
     //TODO Not in far future
     public static final String WRONG_RENT_DAYS_AMOUNT_ERROR_MSG = "Amount of rent days cannot be less that one! Given ";
     //TODO Less than year
+    public static final String NO_AVAILABLE_CARS_LEFT = "No available cars left for given time! Given ";
 
     private final Map<CarType, Integer> availableCars;
     private final List<Rent> rentedCars = new CopyOnWriteArrayList<>();
@@ -25,16 +27,23 @@ public class CarRentalSystem {
 
         availableCars.computeIfPresent(carType, (type, availableCarsCount) ->
         {
-            if (availableCarsCount < 1) {
-                LocalDateTime expectedEndAt = startAt.plusDays(rentDaysAmount);
-                rentedCars.stream()
-                        .filter(rent -> carType.equals(rent.carType()) &&
-                                (expectedEndAt.isBefore(rent.startAt()) || startAt.isAfter(rent.endAt())))
-                        .findFirst()//FIXME Second rent won't be recorded
-                        .orElseThrow(() -> new RuntimeException("No available cars " + carType + " left for given time!"));
+            try {
+                Thread.sleep(200); //Just to simulate renting
+                if (availableCarsCount < 1) {
+                    LocalDateTime endAt = startAt.plusDays(rentDaysAmount);
+                    rentedCars.stream()
+                            .filter(rent ->
+                                    carType.equals(rent.getCarType()) &&
+                                            (endAt.isBefore(rent.getStartAt()) || startAt.isAfter(rent.getEndAt())))
+                            .findFirst()
+                            .map(rent -> Optional.of(new Rent(carType, startAt, endAt)))//FIXME Prev rent will be rewritten
+                            .orElseThrow(() -> new RuntimeException(NO_AVAILABLE_CARS_LEFT + carType));
+                }
+                rentedCars.add(new Rent(carType, startAt, startAt.plusDays(rentDaysAmount)));
+                return availableCarsCount - 1;
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
-            rentedCars.add(new Rent(carType, startAt, startAt.plusDays(rentDaysAmount)));
-            return availableCarsCount - 1;
         });
     }
 

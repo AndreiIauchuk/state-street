@@ -3,13 +3,21 @@ package com.statestreet;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 import static com.statestreet.CarRentalSystem.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import static com.statestreet.CarType.*;
+
 public class CarRentalSystemTest {
 
-    private final CarRentalSystem carRentalSystem = new CarRentalSystem();
+    private final CarRentalSystem carRentalSystem = new CarRentalSystem(
+            Map.of(
+                    SEDAN, 1,
+                    SUV, 2,
+                    VAN, 3
+            ));
 
     @Test
     void shouldThrowWhenCarTypeIsNull() {

@@ -1,8 +1,10 @@
 package com.statestreet;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class CarRentalSystem {
     public static final String WRONG_CAR_TYPE_ERROR_MSG = "Rent car type cannot be null!";
@@ -12,6 +14,7 @@ public class CarRentalSystem {
     //TODO Less than year
 
     private final Map<CarType, Integer> availableCars;
+    private final List<Rent> rentedCars = new CopyOnWriteArrayList<>();
 
     public CarRentalSystem(Map<CarType, Integer> rentableCars) {
         availableCars = new ConcurrentHashMap<>(rentableCars);
@@ -23,8 +26,14 @@ public class CarRentalSystem {
         availableCars.computeIfPresent(carType, (type, availableCarsCount) ->
         {
             if (availableCarsCount < 1) {
-                throw new RuntimeException("No available " + type + " + cars left!");
+                LocalDateTime expectedEndAt = startAt.plusDays(rentDaysAmount);
+                rentedCars.stream()
+                        .filter(rent -> carType.equals(rent.carType()) &&
+                                (expectedEndAt.isBefore(rent.startAt()) || startAt.isAfter(rent.endAt())))
+                        .findFirst()//FIXME Second rent won't be recorded
+                        .orElseThrow(() -> new RuntimeException("No available cars " + carType + " left for given time!"));
             }
+            rentedCars.add(new Rent(carType, startAt, startAt.plusDays(rentDaysAmount)));
             return availableCarsCount - 1;
         });
     }

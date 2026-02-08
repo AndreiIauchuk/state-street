@@ -20,6 +20,11 @@ public class CarRentalSystemTest {
             ));
 
     @Test
+    void shouldRentCar() {
+       carRentalSystem.rent(SEDAN, LocalDateTime.now().plusHours(1), 3);
+    }
+
+    @Test
     void shouldThrowWhenCarTypeIsNull() {
         Exception exc = assertThrows(
                 IllegalArgumentException.class,
